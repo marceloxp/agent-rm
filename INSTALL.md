@@ -112,7 +112,7 @@ hooks** when the project is opened.
 
 Use the ready-made hook at `hooks/claude-code/block-rm.sh` (relative to this
 INSTALL.md). It blocks: `rm`, `/bin/rm`, `command rm`, `xargs rm`, `unlink`,
-`find -delete`. **`agent-rm` is allowed.**
+`find -delete`, `gio trash --empty`. **`agent-rm` is allowed.**
 
 **Important when editing `settings.json`:** back it up first, and **merge** with
 `jq` — never overwrite an existing settings file. Add:
@@ -150,12 +150,12 @@ Add guidance so you naturally prefer `agent-rm`:
 
 - **Claude Code:** add to `CLAUDE.md` (global `~/.claude/CLAUDE.md` or project):
   > To delete files, use `agent-rm <file>` (one at a time, no directories). Never
-  > use `rm`, `unlink`, `find -delete`, or the Delete tool.
+  > use `rm`, `unlink`, `find -delete`, `gio trash --empty`, or the Delete tool.
 
 - **Cursor:** add a rule in `.cursor/rules/agent-rm.mdc` or the project's
   `AGENTS.md`:
   > To delete files, use `agent-rm <file>` via Shell (one at a time, no
-  > directories). Never use `rm`, `unlink`, `find -delete`, or the Delete tool.
+  > directories). Never use `rm`, `unlink`, `find -delete`, `gio trash --empty`, or the Delete tool.
 
 ### Step 7 — VERIFY (do not skip)
 
@@ -176,6 +176,7 @@ echo '{"tool_input":{"command":"rm foo.txt"}}' | bash "$H"           # → deny 
 echo '{"tool_input":{"command":"/bin/rm foo"}}' | bash "$H"          # → deny JSON
 echo '{"tool_input":{"command":"unlink foo"}}' | bash "$H"           # → deny JSON
 echo '{"tool_input":{"command":"find . -delete"}}' | bash "$H"       # → deny JSON
+echo '{"tool_input":{"command":"gio trash --empty"}}' | bash "$H"    # → deny JSON
 echo '{"tool_input":{"command":"echo f | xargs rm"}}' | bash "$H"    # → deny JSON
 echo '{"tool_input":{"command":"agent-rm foo"}}' | bash "$H"         # → empty (allowed)
 

@@ -37,6 +37,7 @@ to `agent-rm`:
 | `xargs rm`           | `find . -print \| xargs rm`          |
 | `unlink`             | `unlink foo.txt`                     |
 | `find -delete`       | `find . -name '*.tmp' -delete`       |
+| `gio trash --empty`  | `gio trash --empty`                  |
 | Cursor `Delete` tool | Native delete (permanent, no trash)  |
 
 **Allowed:** `agent-rm <file>` — one file at a time, no directories.
@@ -114,6 +115,7 @@ echo '{"tool_input":{"command":"agent-rm foo.txt"}}' | bash hooks/claude-code/bl
 
 # Cursor shell — must BLOCK:
 echo '{"command":"/bin/rm foo.txt"}' | bash hooks/cursor/block-rm.sh
+echo '{"command":"gio trash --empty"}' | bash hooks/cursor/block-rm.sh
 
 # Cursor Delete — must BLOCK:
 echo '{"tool_name":"Delete","tool_input":{"path":"foo.txt"}}' | bash hooks/cursor/block-delete.sh
@@ -183,6 +185,6 @@ gio trash --empty                      # empty the trash
   duplicates (e.g. `dup.txt`, `dup.2.txt`) while keeping each origin.
 - Directories and multiple-file/glob deletions are intentionally **not**
   supported.
-- Not blocked: `git clean`, `shred`, `truncate`, Python `os.remove`, etc.
+- Not blocked: `git clean`, `shred`, `truncate`, Python `os.remove`, `gio trash --list`, `gio trash --restore`, etc.
 - Platform: Linux desktop (FreeDesktop trash via `gio`). No macOS/Windows
   support in this release.

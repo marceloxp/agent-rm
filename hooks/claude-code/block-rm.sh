@@ -11,7 +11,7 @@
 #
 # Default: allow (exit 0). Blocking is done via JSON permissionDecision=deny.
 
-DENY_MSG='Blocked (agent-rm): do not permanently delete files. Use '\''agent-rm <file>'\'' — one file at a time, no directories; goes to restorable trash (see '\''agent-rm --help'\'' to restore).'
+DENY_MSG='Blocked (agent-rm): do not permanently delete files or empty the trash. Use '\''agent-rm <file>'\'' — one file at a time, no directories; goes to restorable trash (see '\''agent-rm --help'\'' to restore).'
 
 input="$(cat)"
 cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/dev/null)"
@@ -60,6 +60,12 @@ segment_is_destructive() {
   # xargs ... rm
   if printf '%s' "$trimmed" | grep -qE '\bxargs\b' \
     && printf '%s' "$trimmed" | grep -qE '\brm\b'; then
+    return 0
+  fi
+
+  # gio trash --empty
+  if printf '%s' "$trimmed" | grep -qE '^[[:space:]]*(sudo[[:space:]]+|time[[:space:]]+|[A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]+)*gio[[:space:]]+trash\b' \
+    && printf '%s' "$trimmed" | grep -qE '\-\-empty\b'; then
     return 0
   fi
 

@@ -10,7 +10,9 @@ if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
     echo ""
     echo "Moves a single file to the system trash (via 'gio trash')."
     echo "Directories are not supported."
-    echo "Files can be restored later with: gio trash --restore <original-path>"
+    echo ""
+    echo "List trashed files:  gio trash --list"
+    echo "Restore a file:      gio trash --restore trash:///<name-in-trash>"
     exit 0
 fi
 

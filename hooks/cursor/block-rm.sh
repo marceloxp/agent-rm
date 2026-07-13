@@ -7,7 +7,7 @@
 # Default: allow. Blocking returns JSON with permission=deny.
 
 DENY_USER='Blocked (agent-rm): permanent deletion is not allowed. Use agent-rm <file> instead.'
-DENY_AGENT='Do not permanently delete files. Use agent-rm <file> — one file at a time, no directories; goes to restorable trash (gio trash --restore undoes it).'
+DENY_AGENT='Do not permanently delete files. Use agent-rm <file> — one file at a time, no directories; goes to restorable trash (see agent-rm --help to restore).'
 
 input="$(cat)"
 cmd="$(printf '%s' "$input" | jq -r '.command // empty' 2>/dev/null)"

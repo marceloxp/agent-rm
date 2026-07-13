@@ -96,21 +96,12 @@ work fine to do by hand.
 
 ## Verifying the blocks are active
 
-### Shell commands (Claude Code and Cursor)
+Verification has three parts. Run them in order.
 
-Ask the agent to run `rm` against a file that does not exist:
+### 1. Hook simulation
 
-```bash
-rm /tmp/agent-rm-block-test-does-not-exist
-```
-
-- **Block active:** the command is denied with the hook's message.
-- **Block NOT active:** `rm` runs but only reports `No such file or directory` —
-  nothing was lost. That's your signal the hook isn't installed in this scope.
-
-Never test with a real file.
-
-### Hook simulation
+Does the hook script make the right decision? (Works even before the agent
+reloads its config.)
 
 ```bash
 # Claude Code — must BLOCK:
@@ -125,6 +116,37 @@ echo '{"command":"/bin/rm foo.txt"}' | bash hooks/cursor/block-rm.sh
 # Cursor Delete — must BLOCK:
 echo '{"tool_name":"Delete","tool_input":{"path":"foo.txt"}}' | bash hooks/cursor/block-delete.sh
 ```
+
+### 2. Trash round-trip
+
+`command -v gio` passing is not enough — the trash backend can fail at runtime
+on SSH/headless sessions, WSL, containers, or across filesystems. Prove the
+full round-trip with the bundled script:
+
+```bash
+scripts/check-gio-trash.sh        # OK → exit 0
+scripts/check-gio-trash.sh /path  # test a specific mount/volume
+```
+
+If it exits non-zero, the trash backend is not working in this environment.
+
+### 3. Live block test
+
+Ask the agent to run `rm` against a file that does not exist:
+
+```bash
+rm /tmp/agent-rm-block-test-does-not-exist
+```
+
+Never test with a real file. Interpret the result as one of three states:
+
+- **Blocked** — denied with the hook's message. Protection is active in this
+  session.
+- **Real installation error** — not blocked, and parts 1 or 2 above also failed.
+  Fix the installation and re-verify.
+- **Installed but not yet loaded** — not blocked, but part 1 passed. The config
+  is correct but the hook is not active until the agent session reloads. Restart
+  the session and re-run this test.
 
 ## Usage
 
@@ -149,7 +171,7 @@ moves the link itself to the trash.
 
 ```bash
 gio trash --list                       # list trashed files and their origins
-gio trash --restore /path/to/notes.txt # restore a file to where it came from
+gio trash --restore trash:///notes.txt # restore by trash URI (name as shown by --list)
 gio trash --empty                      # empty the trash
 ```
 

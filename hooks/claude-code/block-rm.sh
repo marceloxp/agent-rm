@@ -11,7 +11,7 @@
 #
 # Default: allow (exit 0). Blocking is done via JSON permissionDecision=deny.
 
-DENY_MSG='Blocked (agent-rm): do not permanently delete files. Use '\''agent-rm <file>'\'' — one file at a time, no directories; goes to restorable trash ('\''gio trash --restore'\'' undoes it).'
+DENY_MSG='Blocked (agent-rm): do not permanently delete files. Use '\''agent-rm <file>'\'' — one file at a time, no directories; goes to restorable trash (see '\''agent-rm --help'\'' to restore).'
 
 input="$(cat)"
 cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/dev/null)"

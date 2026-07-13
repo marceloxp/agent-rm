@@ -159,7 +159,13 @@ Add guidance so you naturally prefer `agent-rm`:
 
 ### Step 7 — VERIFY (do not skip)
 
-#### Hook simulation
+Verification has **three** parts. Run them in order and do not tell the user the
+tool is installed and protecting them until all three pass.
+
+#### 7a — Hook simulation (does the script make the right decision?)
+
+This runs the hook scripts directly, so it works regardless of whether the agent
+has reloaded its own config.
 
 ```bash
 REPO=<path-to-this-repo>
@@ -183,19 +189,62 @@ H="$REPO/hooks/cursor/block-delete.sh"
 echo '{"tool_name":"Delete","tool_input":{"path":"foo.txt"}}' | bash "$H"  # → deny JSON
 ```
 
-#### Live test (safe)
+#### 7b — Trash round-trip (does `agent-rm` actually protect the file?)
 
-Run `rm` via the agent's shell tool against a file that does not exist:
+Blocking `rm` is worthless if the replacement doesn't work. `command -v gio`
+passing is **not** enough: `gio trash` needs a working trash backend (a D-Bus
+session bus, `~/.local/share/Trash`, and a same-filesystem trash for mounted
+volumes). On SSH/headless sessions, WSL, containers, or across filesystems it can
+fail *at runtime* — exactly when you're relying on it.
+
+Prove the whole round-trip (trash → gone → restore → back) with the bundled
+script, which does this on a throwaway file and cleans up after itself:
+
+```bash
+"$REPO/scripts/check-gio-trash.sh"        # → "OK: the gio trash backend works ..."; exit 0
+```
+
+Run it once in the directory where the user actually works (pass a path as the
+first argument to test a specific mount/volume). If it exits non-zero, **stop**
+and tell the user the trash backend isn't working in this environment — do not
+report the tool as installed.
+
+#### 7c — Live block test + session-state check (is the hook active *now*?)
+
+Run `rm` via the agent's own shell tool against a file that does not exist:
 
 ```bash
 rm /tmp/agent-rm-block-test-does-not-exist
 ```
 
-- Hook active → denied with the hook's message.
-- Hook missing → `No such file or directory` — nothing lost.
+Never test with a real file. Interpret the result as **one of three states** —
+do not treat this as a simple pass/fail:
 
-Never test with a real file. Only after blocks are confirmed, tell the user
-you're done.
+1. **Blocked** — denied with the hook's message. The hook is active in this
+   session. ✅ Protection confirmed.
+2. **Real installation error** — the command was *not* blocked **and** 7a/7b
+   above failed too (bad path in config, script not executable, invalid JSON
+   after the merge). Fix the installation and re-verify.
+3. **Installed but not yet loaded this session** — the command was *not* blocked,
+   **but** 7a passed (the script itself decides correctly). This is the common
+   case right after editing config: agents load hooks at **session start**, so a
+   freshly merged hook is often inactive until the session reloads. This is
+   **not** a failure and **not** "protected yet." Do the following:
+
+   - Tell the user plainly: *the config was written correctly, but the hook is
+     not active in the current session, so you are not protected until it
+     reloads.*
+   - Ask them to **restart the session** (close and reopen the agent). In Claude
+     Code, running `/hooks` and pressing Esc also reloads hooks — but because
+     this tool exists to prevent irreversible data loss, prefer a **full
+     restart**; don't rely on the lighter reload for a safety-critical hook.
+   - For Claude Code **project** scope, remind them they must **approve the
+     hooks** when the project reopens.
+   - After the restart, **re-run 7c** and confirm state 1 (Blocked) before
+     considering the install complete.
+
+Only report the tool as installed and protecting the user once **7a, 7b, and a
+Blocked result in 7c** have all been confirmed in the running session.
 
 ### Uninstall
 

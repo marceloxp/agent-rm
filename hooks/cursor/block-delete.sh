@@ -5,7 +5,7 @@
 # This hook blocks it and redirects the agent to agent-rm via Shell.
 
 DENY_USER='Blocked (agent-rm): the Delete tool permanently removes files. Use agent-rm <file> via Shell instead.'
-DENY_AGENT='Do not use the Delete tool to remove files. Run agent-rm <file> via Shell — one file at a time, no directories; goes to restorable trash (gio trash --restore undoes it).'
+DENY_AGENT='Do not use the Delete tool to remove files. Run agent-rm <file> via Shell — one file at a time, no directories; goes to restorable trash (see agent-rm --help to restore).'
 
 input="$(cat)"
 tool_name="$(printf '%s' "$input" | jq -r '.tool_name // empty' 2>/dev/null)"

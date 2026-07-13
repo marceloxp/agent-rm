@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+#
+# agent-rm — move a single file to the system trash (via 'gio trash').
+# Explicit by design: does NOT alias or override 'rm'.
+
+set -euo pipefail
+
+if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
+    echo "Usage: agent-rm <file>"
+    echo ""
+    echo "Moves a single file to the system trash (via 'gio trash')."
+    echo "Directories are not supported."
+    echo "Files can be restored later with: gio trash --restore <original-path>"
+    exit 0
+fi
+
+if ! command -v gio >/dev/null 2>&1; then
+    echo "Error: 'gio' not found. Install it (package libglib2.0-bin)." >&2
+    exit 1
+fi
+
+if [ "$#" -ne 1 ]; then
+    echo "Error: exactly one file required. Run 'agent-rm -h' for help." >&2
+    exit 1
+fi
+
+item="$1"
+
+if [ -d "$item" ]; then
+    echo "Error: '$item' is a directory. agent-rm does not remove directories." >&2
+    exit 1
+fi
+
+# Accept broken symlinks: -e checks the target; -L checks the link itself.
+if [ ! -e "$item" ] && [ ! -L "$item" ]; then
+    echo "Error: '$item' does not exist." >&2
+    exit 1
+fi
+
+if gio trash -- "$item"; then
+    echo "Moved to trash: $item"
+else
+    echo "Error: failed to move '$item' to trash." >&2
+    exit 1
+fi

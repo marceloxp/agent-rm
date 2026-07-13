@@ -1,5 +1,7 @@
 # agent-rm
 
+![banner](https://raw.githubusercontent.com/marceloxp/agent-rm/refs/heads/main/images/banner.png)
+
 A safe deletion command for AI agents. It moves a single file to the system
 trash instead of permanently deleting it. It is **explicit** — it does not alias
 or override `rm`.
